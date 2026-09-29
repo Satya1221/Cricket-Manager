@@ -121,6 +121,7 @@ fun PremiumButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     icon: ImageVector? = null,
     borderColor: Color = CricketGoldBorder,
     containerColor: Color = CricketNavySurfaceElevated,
@@ -130,14 +131,17 @@ fun PremiumButton(
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .height(height)
             .testTag(testTag),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(1.dp, if (enabled) borderColor else Color(0xFF333B58)),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = containerColor,
-            contentColor = textColor
+            contentColor = textColor,
+            disabledContainerColor = CricketNavySurfaceElevated,
+            disabledContentColor = TextMuted
         )
     ) {
         Row(

@@ -158,6 +158,41 @@ fun CricketManagerAppContent(viewModel: CricketViewModel) {
                     modifier = Modifier.padding(innerPadding)
                 )
             }
+            activeSubScreen == "facilities" -> {
+                FacilitiesScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { activeSubScreen = null },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            activeSubScreen == "medical" -> {
+                MedicalScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { activeSubScreen = null },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            activeSubScreen == "staff" -> {
+                StaffScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { activeSubScreen = null },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            activeSubScreen == "board" -> {
+                BoardScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { activeSubScreen = null },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
+            activeSubScreen == "save_load" -> {
+                SaveLoadScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { activeSubScreen = null },
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
             activeSubScreen == "match_centre" -> {
                 MatchCentreScreen(
                     viewModel = viewModel,
@@ -192,11 +227,16 @@ fun CricketManagerAppContent(viewModel: CricketViewModel) {
                             onNavigateToScouting = { activeSubScreen = "scouting" },
                             onNavigateToYouth = { currentTab = CricketNavDestination.YOUTH },
                             onNavigateToAuction = { activeSubScreen = "auction" },
+                            onNavigateToFacilities = { activeSubScreen = "facilities" },
+                            onNavigateToMedical = { activeSubScreen = "medical" },
+                            onNavigateToStaff = { activeSubScreen = "staff" },
+                            onNavigateToBoard = { activeSubScreen = "board" },
                             onNavigateToLeague = { activeSubScreen = "league" },
                             onNavigateToFinance = { activeSubScreen = "finance" },
                             onNavigateToTrophies = { activeSubScreen = "trophies" },
                             onNavigateToNews = { activeSubScreen = "news" },
                             onNavigateToSettings = { activeSubScreen = "settings" },
+                            onNavigateToSaveLoad = { activeSubScreen = "save_load" },
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
@@ -235,11 +275,16 @@ fun CricketManagerAppContent(viewModel: CricketViewModel) {
                             onNavigateToTraining = { activeSubScreen = "training" },
                             onNavigateToScouting = { activeSubScreen = "scouting" },
                             onNavigateToAuction = { activeSubScreen = "auction" },
+                            onNavigateToFacilities = { activeSubScreen = "facilities" },
+                            onNavigateToMedical = { activeSubScreen = "medical" },
+                            onNavigateToStaff = { activeSubScreen = "staff" },
+                            onNavigateToBoard = { activeSubScreen = "board" },
                             onNavigateToLeague = { activeSubScreen = "league" },
                             onNavigateToFinance = { activeSubScreen = "finance" },
                             onNavigateToTrophies = { activeSubScreen = "trophies" },
                             onNavigateToNews = { activeSubScreen = "news" },
                             onNavigateToSettings = { activeSubScreen = "settings" },
+                            onNavigateToSaveLoad = { activeSubScreen = "save_load" },
                             modifier = Modifier.padding(innerPadding)
                         )
                     }

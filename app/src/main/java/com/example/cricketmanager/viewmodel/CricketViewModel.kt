@@ -3,6 +3,7 @@ package com.example.cricketmanager.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.cricketmanager.data.manager.ClubManager
 import com.example.cricketmanager.data.model.*
 import com.example.cricketmanager.data.repository.CricketRepository
 import com.example.cricketmanager.engine.BattingMindset
@@ -80,6 +81,42 @@ class CricketViewModel(val repository: CricketRepository) : ViewModel() {
     val seasonNumber = MutableStateFlow(1)
     val userPurseLakhs = MutableStateFlow(6850) // ₹68.50 Crores
     val userTeamId = MutableStateFlow(1L) // Default to Team 1 (e.g. Mumbai)
+
+    // Club Manager Systems (Calendar, Facilities, Medical, Staff, Board, Save/Load)
+    val clubManager = ClubManager()
+    val gameDate = clubManager.gameDate
+    val facilities = clubManager.facilities
+    val injuries = clubManager.injuries
+    val staffMembers = clubManager.staff
+    val boardConfidence = clubManager.boardConfidence
+    val fanConfidence = clubManager.fanConfidence
+    val boardObjectives = clubManager.boardObjectives
+    val saveSlots = clubManager.saveSlots
+    val notifications = clubManager.notifications
+
+    fun advanceDay() {
+        clubManager.advanceDay(userPurseLakhs.value) { newPurse ->
+            userPurseLakhs.value = newPurse
+        }
+    }
+
+    fun upgradeFacility(type: FacilityType) {
+        clubManager.upgradeFacility(type, userPurseLakhs.value) { newPurse ->
+            userPurseLakhs.value = newPurse
+        }
+    }
+
+    fun saveCareer(slotId: Int) {
+        val myTeam = allTeams.value.find { it.id == userTeamId.value }?.name ?: "My Franchise"
+        clubManager.saveGame(slotId, myTeam, seasonNumber.value, userPurseLakhs.value)
+    }
+
+    fun loadCareer(slotId: Int) {
+        clubManager.loadGame(slotId) { s, p ->
+            seasonNumber.value = s
+            userPurseLakhs.value = p
+        }
+    }
 
     // ==========================================
     // YOUTH ACADEMY SYSTEM

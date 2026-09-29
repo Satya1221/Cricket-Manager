@@ -45,11 +45,16 @@ fun HomeScreen(
     onNavigateToScouting: () -> Unit,
     onNavigateToYouth: () -> Unit,
     onNavigateToAuction: () -> Unit,
+    onNavigateToFacilities: () -> Unit,
+    onNavigateToMedical: () -> Unit,
+    onNavigateToStaff: () -> Unit,
+    onNavigateToBoard: () -> Unit,
     onNavigateToLeague: () -> Unit,
     onNavigateToFinance: () -> Unit,
     onNavigateToTrophies: () -> Unit,
     onNavigateToNews: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToSaveLoad: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val allTeams by viewModel.allTeams.collectAsState()
@@ -59,6 +64,9 @@ fun HomeScreen(
     val userPurse by viewModel.userPurseLakhs.collectAsState()
     val isAuctionActive by viewModel.isSeasonAuctionActive.collectAsState()
     val selectedTeam by viewModel.selectedTeam.collectAsState()
+    val gameDate by viewModel.gameDate.collectAsState()
+    val boardConf by viewModel.boardConfidence.collectAsState()
+    val notifications by viewModel.notifications.collectAsState()
 
     val myTeam = selectedTeam ?: allTeams.firstOrNull()
     val purseFormatted = if (userPurse >= 100) "₹${String.format("%.2f", userPurse / 100.0)} Cr" else "₹${userPurse} L"
@@ -67,7 +75,7 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(CricketNavyBackground),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         // Top Franchise Header
@@ -82,12 +90,58 @@ fun HomeScreen(
             )
         }
 
+        // Calendar Date & Advance Day Bar
+        item {
+            Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(CricketNavySurfaceElevated)
+                        .border(BorderStroke(1.dp, CricketGoldBorder), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = "Date",
+                            tint = CricketGold,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = gameDate.formatted,
+                                color = TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Board Approval: $boardConf%",
+                                color = CricketGoldLight,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    GoldButton(
+                        text = "ADVANCE DAY",
+                        onClick = { viewModel.advanceDay() },
+                        height = 36.dp,
+                        icon = Icons.Default.FastForward
+                    )
+                }
+            }
+        }
+
         // Hero Stadium Banner
         item {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(160.dp)
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .border(BorderStroke(1.dp, CricketGoldBorder), RoundedCornerShape(16.dp))
@@ -111,19 +165,19 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(16.dp)
+                        .padding(14.dp)
                 ) {
                     Text(
                         text = "PREMIER CRICKET LEAGUE",
                         color = CricketGold,
-                        fontSize = 20.sp,
+                        fontSize = 19.sp,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp
                     )
                     Text(
-                        text = "Season $seasonNum • Championship Journey",
+                        text = "Season $seasonNum • Championship Campaign",
                         color = Color.White,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -131,7 +185,6 @@ fun HomeScreen(
         }
 
         // SEASON MEGA AUCTION CARD
-        // (Matching user requirement: "make auction not available as an option directly it will show up when season starts everytime")
         item {
             Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                 PremiumCard(
@@ -185,20 +238,19 @@ fun HomeScreen(
                     } else {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             PremiumButton(
-                                text = "VIEW AUCTION POOL",
+                                text = "AUCTION POOL",
                                 onClick = onNavigateToAuction,
                                 modifier = Modifier.weight(1f),
-                                height = 38.dp,
-                                icon = Icons.Default.ListAlt
+                                height = 36.dp
                             )
                             GoldButton(
-                                text = "START SEASON AUCTION",
+                                text = "TRIGGER AUCTION",
                                 onClick = {
                                     viewModel.triggerSeasonStartAuction()
                                     onNavigateToAuction()
                                 },
                                 modifier = Modifier.weight(1f),
-                                height = 38.dp,
+                                height = 36.dp,
                                 icon = Icons.Default.PlayArrow
                             )
                         }
@@ -238,7 +290,7 @@ fun HomeScreen(
                         team2ShortCode = oppTeam?.shortCode ?: "CSK",
                         team2ColorHex = oppTeam?.primaryColorHex ?: "#FFC107",
                         venue = myTeam?.homeGround ?: "National Arena",
-                        statusText = "UPCOMING FIXTURE",
+                        statusText = "SCHEDULED FIXTURE",
                         scoreText = "Toss & Pitch Analysis Available",
                         isLive = false,
                         actionButtonText = "OPEN MATCH CENTRE",
@@ -284,22 +336,57 @@ fun HomeScreen(
             }
         }
 
-        // QUICK HUB NAVIGATION TILES
+        // CLUB MANAGEMENT HUB GRID
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                SectionHeader(title = "Manager Operations", subtitle = "Franchise command center")
+                SectionHeader(title = "Club Management Hub", subtitle = "Franchise administration")
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         HubTile("Squad", Icons.Default.Group, CricketGold, Modifier.weight(1f), onNavigateToSquad)
                         HubTile("Tactics 3D", Icons.Default.SportsCricket, CricketStadiumBlue, Modifier.weight(1f), onNavigateToTactics)
                         HubTile("Training", Icons.Default.FitnessCenter, CricketStadiumGreen, Modifier.weight(1f), onNavigateToTraining)
                         HubTile("Scouting", Icons.Default.Search, CricketStadiumPurple, Modifier.weight(1f), onNavigateToScouting)
                     }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        HubTile("Facilities", Icons.Default.Stadium, CricketGold, Modifier.weight(1f), onNavigateToFacilities)
+                        HubTile("Medical", Icons.Default.LocalHospital, CricketRedAccent, Modifier.weight(1f), onNavigateToMedical)
+                        HubTile("Staff", Icons.Default.Badge, CricketStadiumNeon, Modifier.weight(1f), onNavigateToStaff)
+                        HubTile("Board", Icons.Default.Assignment, CricketGoldLight, Modifier.weight(1f), onNavigateToBoard)
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         HubTile("League", Icons.Default.Leaderboard, CricketGold, Modifier.weight(1f), onNavigateToLeague)
                         HubTile("Finance", Icons.Default.MonetizationOn, CricketStadiumGreen, Modifier.weight(1f), onNavigateToFinance)
                         HubTile("Trophies", Icons.Default.EmojiEvents, CricketGold, Modifier.weight(1f), onNavigateToTrophies)
-                        HubTile("Settings", Icons.Default.Settings, TextSecondary, Modifier.weight(1f), onNavigateToSettings)
+                        HubTile("Save/Load", Icons.Default.Save, CricketStadiumBlue, Modifier.weight(1f), onNavigateToSaveLoad)
+                    }
+                }
+            }
+        }
+
+        // RECENT NOTIFICATIONS FEED
+        if (notifications.isNotEmpty()) {
+            item {
+                Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    SectionHeader(title = "Club Bulletins", subtitle = "Operational notices")
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        notifications.take(3).forEach { n ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(CricketNavySurfaceElevated)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = CricketGold, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(text = n.title, color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Text(text = n.message, color = TextSecondary, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -344,8 +431,8 @@ fun HubTile(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(imageVector = icon, contentDescription = title, tint = accentColor, modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.height(6.dp))
+            Icon(imageVector = icon, contentDescription = title, tint = accentColor, modifier = Modifier.size(22.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = title,
                 color = TextPrimary,

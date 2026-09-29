@@ -28,11 +28,16 @@ fun MoreHubScreen(
     onNavigateToTraining: () -> Unit,
     onNavigateToScouting: () -> Unit,
     onNavigateToAuction: () -> Unit,
+    onNavigateToFacilities: () -> Unit,
+    onNavigateToMedical: () -> Unit,
+    onNavigateToStaff: () -> Unit,
+    onNavigateToBoard: () -> Unit,
     onNavigateToLeague: () -> Unit,
     onNavigateToFinance: () -> Unit,
     onNavigateToTrophies: () -> Unit,
     onNavigateToNews: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToSaveLoad: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -52,10 +57,20 @@ fun MoreHubScreen(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Operations, Tactics & Franchise Administration",
+                    text = "Operations, Facilities & Franchise Administration",
                     color = CricketGoldLight,
                     fontSize = 12.sp
                 )
+            }
+        }
+
+        item {
+            SectionHeader(title = "Infrastructure & Staff")
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                MoreMenuTile("Club Facilities", "Upgrade stadium, training, medical & commercial hubs", Icons.Default.Stadium, CricketGold, onNavigateToFacilities)
+                MoreMenuTile("Sports Science & Medical", "Squad fitness tracking, fatigue & injury rehabilitation", Icons.Default.LocalHospital, CricketRedAccent, onNavigateToMedical)
+                MoreMenuTile("Coaching Staff & Scouts", "Technical directors, bowling specialists & talent scouts", Icons.Default.Badge, CricketStadiumNeon, onNavigateToStaff)
+                MoreMenuTile("Board & Fan Sentiment", "Board of directors directives, objectives & fan loyalty", Icons.Default.Assignment, CricketGoldLight, onNavigateToBoard)
             }
         }
 
@@ -76,6 +91,7 @@ fun MoreHubScreen(
                 MoreMenuTile("Club Finances & Purse", "Revenue breakdown, salaries & budget allocations", Icons.Default.MonetizationOn, CricketStadiumGreen, onNavigateToFinance)
                 MoreMenuTile("Trophy Showcase", "Silverware, MVP caps and honours", Icons.Default.EmojiEvents, CricketGold, onNavigateToTrophies)
                 MoreMenuTile("Official Cricket Dispatch", "Press announcements, bulletins and reviews", Icons.Default.Campaign, CricketStadiumNeon, onNavigateToNews)
+                MoreMenuTile("Save & Load Career", "Manage multiple save slots and backups", Icons.Default.Save, CricketStadiumBlue, onNavigateToSaveLoad)
                 MoreMenuTile("Game Settings", "Simulation speed, difficulty and preferences", Icons.Default.Settings, TextSecondary, onNavigateToSettings)
             }
         }
