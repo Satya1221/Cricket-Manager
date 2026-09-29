@@ -16,7 +16,7 @@ private val PremiumCricketColorScheme = darkColorScheme(
     onSecondaryContainer = CricketStadiumNeon,
     tertiary = CricketStadiumPurple,
     onTertiary = Color.White,
-    background = CricketBackground,
+    background = CricketNavyBackground,
     onBackground = TextPrimary,
     surface = CricketNavySurface,
     onSurface = TextPrimary,
@@ -31,6 +31,7 @@ fun CricketManagerTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = PremiumCricketColorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }
