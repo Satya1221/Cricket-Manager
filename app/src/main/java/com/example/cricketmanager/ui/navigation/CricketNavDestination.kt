@@ -1,11 +1,7 @@
 package com.example.cricketmanager.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Leaderboard
-import androidx.compose.material.icons.filled.SportsCricket
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class CricketNavDestination(
@@ -14,8 +10,8 @@ enum class CricketNavDestination(
     val icon: ImageVector
 ) {
     HOME("home", "Home", Icons.Default.Home),
-    LIVE_MATCH("live_match", "Match", Icons.Default.SportsCricket),
-    TEAMS("teams", "Teams", Icons.Default.Group),
-    TOURNAMENTS("tournaments", "League", Icons.Default.EmojiEvents),
-    STATS("stats", "Stats", Icons.Default.Leaderboard)
+    SQUAD("squad", "Squad", Icons.Default.Group),
+    MATCHES("matches", "Matches", Icons.Default.SportsCricket),
+    YOUTH("youth", "Youth", Icons.Default.School),
+    MORE("more", "More", Icons.Default.Widgets)
 }

@@ -3,32 +3,20 @@ package com.example.cricketmanager.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.cricketmanager.data.model.BallEventEntity
-import com.example.cricketmanager.data.model.ExtraType
-import com.example.cricketmanager.data.model.MatchEntity
-import com.example.cricketmanager.data.model.MatchStatus
-import com.example.cricketmanager.data.model.PlayerEntity
-import com.example.cricketmanager.data.model.PlayerRole
-import com.example.cricketmanager.data.model.TeamEntity
-import com.example.cricketmanager.data.model.TossDecision
-import com.example.cricketmanager.data.model.TournamentEntity
-import com.example.cricketmanager.data.model.TournamentStandingsEntity
-import com.example.cricketmanager.data.model.WicketType
+import com.example.cricketmanager.data.model.*
 import com.example.cricketmanager.data.repository.CricketRepository
 import com.example.cricketmanager.engine.BattingMindset
 import com.example.cricketmanager.engine.BowlingPlan
 import com.example.cricketmanager.engine.MatchSimulationEngine
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class CricketViewModel(private val repository: CricketRepository) : ViewModel() {
+class CricketViewModel(val repository: CricketRepository) : ViewModel() {
 
+    // Teams & Matches flows from Repository
     val allTeams: StateFlow<List<TeamEntity>> = repository.allTeams
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -73,7 +61,11 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
     private val _bowlingPlan = MutableStateFlow(BowlingPlan.BALANCED)
     val bowlingPlan: StateFlow<BowlingPlan> = _bowlingPlan.asStateFlow()
 
-    // Selected Team for Team Details
+    // Field preset for 3D tactics
+    private val _fieldPreset = MutableStateFlow("Balanced Ring")
+    val fieldPreset: StateFlow<String> = _fieldPreset.asStateFlow()
+
+    // Selected Team for Team Details & Management
     private val _selectedTeam = MutableStateFlow<TeamEntity?>(null)
     val selectedTeam: StateFlow<TeamEntity?> = _selectedTeam.asStateFlow()
 
@@ -84,12 +76,287 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
     private val _standings = MutableStateFlow<List<TournamentStandingsEntity>>(emptyList())
     val standings: StateFlow<List<TournamentStandingsEntity>> = _standings.asStateFlow()
 
+    // Franchise Career & Finances
+    val seasonNumber = MutableStateFlow(1)
+    val userPurseLakhs = MutableStateFlow(6850) // ₹68.50 Crores
+    val userTeamId = MutableStateFlow(1L) // Default to Team 1 (e.g. Mumbai)
+
+    // ==========================================
+    // YOUTH ACADEMY SYSTEM
+    // ==========================================
+    private val _academyLevel = MutableStateFlow(2)
+    val academyLevel: StateFlow<Int> = _academyLevel.asStateFlow()
+
+    private val _youthPlayers = MutableStateFlow(
+        listOf(
+            YouthPlayer("YP_1", "Aarav Sharma", 17, PlayerRole.BATSMAN, 66, 94, 72, 38, "Aggressive Opener", 0.65f),
+            YouthPlayer("YP_2", "Devendra Rawat", 18, PlayerRole.BOWLER, 68, 92, 32, 75, "145 kph Express Pace", 0.50f),
+            YouthPlayer("YP_3", "Karan Singhal", 16, PlayerRole.ALL_ROUNDER, 64, 91, 65, 68, "Hard-hitting Finisher", 0.40f),
+            YouthPlayer("YP_4", "Manish Iyer", 17, PlayerRole.WICKET_KEEPER, 65, 88, 70, 25, "Lightning Glovework", 0.70f),
+            YouthPlayer("YP_5", "Pranav Deshmukh", 18, PlayerRole.BOWLER, 63, 89, 28, 72, "Mystery Leg Spin", 0.30f),
+            YouthPlayer("YP_6", "Vikramaditya Roy", 19, PlayerRole.BATSMAN, 70, 93, 76, 40, "Classical Top Order", 0.85f)
+        )
+    )
+    val youthPlayers: StateFlow<List<YouthPlayer>> = _youthPlayers.asStateFlow()
+
+    fun trainYouthPlayer(youthId: String) {
+        _youthPlayers.value = _youthPlayers.value.map { yp ->
+            if (yp.id == youthId && !yp.isPromoted) {
+                val newProgress = (yp.progress + 0.25f).coerceAtMost(1f)
+                val newSkill = if (newProgress >= 1f) (yp.currentSkill + 3).coerceAtMost(yp.potentialSkill) else yp.currentSkill
+                val newBat = if (yp.role == PlayerRole.BATSMAN || yp.role == PlayerRole.ALL_ROUNDER) yp.battingSkill + 2 else yp.battingSkill
+                val newBowl = if (yp.role == PlayerRole.BOWLER || yp.role == PlayerRole.ALL_ROUNDER) yp.bowlingSkill + 2 else yp.bowlingSkill
+                yp.copy(
+                    progress = if (newProgress >= 1f) 0.1f else newProgress,
+                    currentSkill = newSkill,
+                    battingSkill = newBat,
+                    bowlingSkill = newBowl
+                )
+            } else yp
+        }
+    }
+
+    fun upgradeAcademy() {
+        if (_academyLevel.value < 5 && userPurseLakhs.value >= 200) {
+            userPurseLakhs.value -= 200
+            _academyLevel.value += 1
+        }
+    }
+
+    fun promoteYouthToSenior(youthId: String, targetTeamId: Long) {
+        val yp = _youthPlayers.value.find { it.id == youthId } ?: return
+        if (yp.isPromoted) return
+
+        viewModelScope.launch {
+            val newPlayer = PlayerEntity(
+                teamId = targetTeamId,
+                name = yp.name,
+                role = yp.role,
+                battingSkill = yp.battingSkill + 4,
+                bowlingSkill = yp.bowlingSkill + 4,
+                fieldingSkill = 75,
+                jerseyNumber = (12..99).random(),
+                inPlayingXi = false,
+                battingOrder = 12
+            )
+            repository.insertPlayer(newPlayer)
+
+            // Mark as promoted
+            _youthPlayers.value = _youthPlayers.value.map {
+                if (it.id == youthId) it.copy(isPromoted = true) else it
+            }
+
+            selectTeam(targetTeamId)
+        }
+    }
+
+    // ==========================================
+    // AUCTION SYSTEM
+    // "make auction not available as an option directly
+    //  it will show up when season starts everytime"
+    // ==========================================
+    private val _isSeasonAuctionActive = MutableStateFlow(false)
+    val isSeasonAuctionActive: StateFlow<Boolean> = _isSeasonAuctionActive.asStateFlow()
+
+    private val _auctionPlayersPool = MutableStateFlow(
+        listOf(
+            AuctionItem("AUC_1", "Heinrich Klaasen", PlayerRole.WICKET_KEEPER, 91, 32, "South Africa", 200, 200),
+            AuctionItem("AUC_2", "Mitchell Starc", PlayerRole.BOWLER, 92, 34, "Australia", 200, 200),
+            AuctionItem("AUC_3", "Travis Head", PlayerRole.BATSMAN, 90, 30, "Australia", 200, 200),
+            AuctionItem("AUC_4", "Rinku Singh", PlayerRole.BATSMAN, 87, 26, "India", 150, 150),
+            AuctionItem("AUC_5", "Gerald Coetzee", PlayerRole.BOWLER, 86, 23, "South Africa", 100, 100),
+            AuctionItem("AUC_6", "Cameron Green", PlayerRole.ALL_ROUNDER, 88, 25, "Australia", 200, 200),
+            AuctionItem("AUC_7", "Mayank Yadav", PlayerRole.BOWLER, 85, 22, "India", 50, 50),
+            AuctionItem("AUC_8", "Rachin Ravindra", PlayerRole.ALL_ROUNDER, 86, 24, "New Zealand", 100, 100),
+            AuctionItem("AUC_9", "Matheesha Pathirana", PlayerRole.BOWLER, 88, 21, "Sri Lanka", 100, 100),
+            AuctionItem("AUC_10", "Phil Salt", PlayerRole.BATSMAN, 87, 27, "England", 150, 150)
+        )
+    )
+    val auctionPlayersPool: StateFlow<List<AuctionItem>> = _auctionPlayersPool.asStateFlow()
+
+    private val _currentAuctionIndex = MutableStateFlow(0)
+    val currentAuctionIndex: StateFlow<Int> = _currentAuctionIndex.asStateFlow()
+
+    private val _auctionTimer = MutableStateFlow(10)
+    val auctionTimer: StateFlow<Int> = _auctionTimer.asStateFlow()
+
+    fun triggerSeasonStartAuction() {
+        _isSeasonAuctionActive.value = true
+        _currentAuctionIndex.value = 0
+        _auctionTimer.value = 12
+        resetAuctionBids()
+    }
+
+    private fun resetAuctionBids() {
+        val pool = _auctionPlayersPool.value
+        pool.forEach { item ->
+            item.currentBidLakhs = item.basePriceLakhs
+            item.highestBidderTeam = "None"
+            item.highestBidderId = null
+            item.isSold = false
+            item.isPassed = false
+        }
+        _auctionPlayersPool.value = ArrayList(pool)
+    }
+
+    fun placeUserBid() {
+        val idx = _currentAuctionIndex.value
+        val pool = _auctionPlayersPool.value
+        if (idx >= pool.size) return
+        val currentItem = pool[idx]
+
+        val raiseIncrement = if (currentItem.currentBidLakhs >= 1000) 50 else if (currentItem.currentBidLakhs >= 200) 25 else 20
+        val newBid = currentItem.currentBidLakhs + raiseIncrement
+
+        if (userPurseLakhs.value >= newBid) {
+            val userTeam = allTeams.value.find { it.id == userTeamId.value }
+            currentItem.currentBidLakhs = newBid
+            currentItem.highestBidderTeam = userTeam?.name ?: "My Franchise"
+            currentItem.highestBidderId = userTeamId.value
+            _auctionTimer.value = 8
+            _auctionPlayersPool.value = ArrayList(pool)
+
+            // Trigger AI Bot counter-bid after a delay
+            viewModelScope.launch {
+                delay(2000)
+                considerAiCounterBid(currentItem)
+            }
+        }
+    }
+
+    private fun considerAiCounterBid(item: AuctionItem) {
+        val aiTeams = allTeams.value.filter { it.id != userTeamId.value }
+        if (aiTeams.isEmpty()) return
+
+        // 55% chance an AI franchise bids if rating is high
+        if (Math.random() < 0.55 && item.currentBidLakhs < item.rating * 18) {
+            val rival = aiTeams.random()
+            val raiseIncrement = if (item.currentBidLakhs >= 1000) 50 else 25
+            item.currentBidLakhs += raiseIncrement
+            item.highestBidderTeam = rival.name
+            item.highestBidderId = rival.id
+            _auctionTimer.value = 8
+            _auctionPlayersPool.value = ArrayList(_auctionPlayersPool.value)
+        }
+    }
+
+    fun passAuctionItem() {
+        val idx = _currentAuctionIndex.value
+        val pool = _auctionPlayersPool.value
+        if (idx >= pool.size) return
+        val item = pool[idx]
+
+        // Finalize this player
+        if (item.highestBidderId != null) {
+            item.isSold = true
+            if (item.highestBidderId == userTeamId.value) {
+                userPurseLakhs.value = maxOf(0, userPurseLakhs.value - item.currentBidLakhs)
+                // Add to user squad
+                viewModelScope.launch {
+                    val bought = PlayerEntity(
+                        teamId = userTeamId.value,
+                        name = item.name,
+                        role = item.role,
+                        battingSkill = if (item.role == PlayerRole.BATSMAN) item.rating else item.rating - 15,
+                        bowlingSkill = if (item.role == PlayerRole.BOWLER) item.rating else if (item.role == PlayerRole.ALL_ROUNDER) item.rating - 5 else 30,
+                        jerseyNumber = (1..99).random(),
+                        inPlayingXi = true
+                    )
+                    repository.insertPlayer(bought)
+                    selectTeam(userTeamId.value)
+                }
+            }
+        } else {
+            item.isPassed = true
+        }
+
+        // Advance to next player
+        if (idx + 1 < pool.size) {
+            _currentAuctionIndex.value = idx + 1
+            _auctionTimer.value = 10
+        } else {
+            // Auction Completed!
+            _isSeasonAuctionActive.value = false
+        }
+        _auctionPlayersPool.value = ArrayList(pool)
+    }
+
+    fun completeAuction() {
+        _isSeasonAuctionActive.value = false
+    }
+
+    fun advanceToNextSeason() {
+        seasonNumber.value += 1
+        userPurseLakhs.value += 2000 // New season sponsorship injection: ₹20.00 Cr
+        triggerSeasonStartAuction()
+    }
+
+    // ==========================================
+    // TRAINING SYSTEM
+    // ==========================================
+    fun trainPlayer(player: PlayerEntity, discipline: String) {
+        viewModelScope.launch {
+            val updated = when (discipline) {
+                "Batting" -> player.copy(battingSkill = minOf(99, player.battingSkill + 1))
+                "Bowling" -> player.copy(bowlingSkill = minOf(99, player.bowlingSkill + 1))
+                "Fielding" -> player.copy(fieldingSkill = minOf(99, player.fieldingSkill + 1))
+                else -> player.copy(
+                    battingSkill = minOf(99, player.battingSkill + 1),
+                    fieldingSkill = minOf(99, player.fieldingSkill + 1)
+                )
+            }
+            repository.updatePlayer(updated)
+            selectTeam(player.teamId)
+        }
+    }
+
+    fun setFieldPreset(preset: String) {
+        _fieldPreset.value = preset
+    }
+
+    // ==========================================
+    // NEWS & INBOX
+    // ==========================================
+    val newsList = MutableStateFlow(
+        listOf(
+            NewsItem("N1", "Season Mega Auction Opens with Fierce Bidding", "AUCTION", "Today", "Franchises prepare their war-chests as top T20 specialists and emerging youth prospects go under the hammer."),
+            NewsItem("N2", "Youth Academy Breakthrough: Scouts Discover New Talent", "ACADEMY", "Yesterday", "The franchise youth development wing unveils outstanding prodigies ready to step up into the senior squad."),
+            NewsItem("N3", "Championship Race Heats Up: Playoff Scenarios Explained", "LEAGUE", "2 days ago", "With net run rates razor thin, top contenders battle for qualification spots in the final tournament stretch."),
+            NewsItem("N4", "Pitch Condition Advisory: Fast Bowlers Expect Extra Bounce", "VENUE", "3 days ago", "Head curator reveals the wicket is prepared with a firm green top, favoring attacking stroke play and fiery seamers.")
+        )
+    )
+
+    // ==========================================
+    // TROPHY CABINET
+    // ==========================================
+    val trophiesList = MutableStateFlow(
+        listOf(
+            TrophyItem("T1", "Premier League Championship Cup", "National T20 Cup", "Season 1", true, "Awarded to the ultimate champion of the T20 franchise league."),
+            TrophyItem("T2", "Super League Gold Shield", "Super League", null, false, "Awarded for winning the league stage with highest points table finish."),
+            TrophyItem("T3", "Orange Cap Honor", "Top Run Scorer", "Season 1", true, "Presented to the most prolific run-getter of the tournament."),
+            TrophyItem("T4", "Purple Cap Honor", "Top Wicket Taker", null, false, "Presented to the most lethal bowler with highest wickets."),
+            TrophyItem("T5", "Youth Development Shield", "Academy Excellence", "Season 1", true, "Honoring outstanding youth player promotion into professional senior ranks.")
+        )
+    )
+
+    // ==========================================
+    // EXISTING SIMULATION & MATCH METHODS
+    // (Preserved exactly as required)
+    // ==========================================
+
     init {
         // Load initial tournament standings
         viewModelScope.launch {
             repository.allTournaments.collect { list ->
                 if (list.isNotEmpty()) {
                     loadTournamentStandings(list.first().id)
+                }
+            }
+        }
+        viewModelScope.launch {
+            repository.allTeams.collect { teams ->
+                if (teams.isNotEmpty() && _selectedTeam.value == null) {
+                    selectTeam(teams.first().id)
                 }
             }
         }
@@ -140,7 +407,6 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
         _battingTeamPlayers.value = batPlayers
         _bowlingTeamPlayers.value = bowlPlayers
 
-        // If active match lacks strikers or bowler, initialize them
         if (match.status == MatchStatus.IN_PROGRESS) {
             var updated = match
             var needsUpdate = false
@@ -154,7 +420,6 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
                 needsUpdate = true
             }
             if (updated.currentBowlerId == null && bowlPlayers.isNotEmpty()) {
-                // Pick a bowler or all-rounder from the bottom/middle
                 val preferredBowler = bowlPlayers.lastOrNull { it.role == PlayerRole.BOWLER } ?: bowlPlayers.last()
                 updated = updated.copy(currentBowlerId = preferredBowler.id)
                 needsUpdate = true
@@ -366,13 +631,11 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
             var nextBowlerId = match.currentBowlerId
 
             if (isWicket) {
-                // Find next batsman from batting XI
                 val allBatting = _battingTeamPlayers.value
                 val battedIds = (_matchBalls.value.map { it.strikerId } + _matchBalls.value.map { it.nonStrikerId }).toSet() + striker.id
                 val nextBatter = allBatting.firstOrNull { it.id !in battedIds && it.id != nextNonStrikerId }
                 nextStrikerId = nextBatter?.id
             } else {
-                // Strike rotation: odd runs switch strike
                 if (ball.runsBat % 2 == 1 || (ball.extraType == ExtraType.WIDE && ball.extraRuns % 2 == 1)) {
                     val temp = nextStrikerId
                     nextStrikerId = nextNonStrikerId
@@ -383,12 +646,10 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
             // End of over handling
             val overCompleted = isLegal && (newBalls % 6 == 0)
             if (overCompleted) {
-                // Switch ends
                 val temp = nextStrikerId
                 nextStrikerId = nextNonStrikerId
                 nextNonStrikerId = temp
 
-                // Pick another bowler from bowling XI
                 val bowlingXI = _bowlingTeamPlayers.value
                 val eligibleBowlers = bowlingXI.filter { it.id != bowler.id }
                 if (eligibleBowlers.isNotEmpty()) {
@@ -398,13 +659,11 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
                 }
             }
 
-            // Check Innings or Match Completion
             val maxBalls = match.oversPerInnings * 6
             val allOut = newWickets >= 10 || nextStrikerId == null
 
             if (match.currentInnings == 1) {
                 if (newBalls >= maxBalls || allOut) {
-                    // Innings 1 finished! Switch to Innings 2
                     val target = newRuns + 1
                     val newBattingTeamId = match.bowlingFirstTeamId ?: match.team2Id
                     val newBowlingTeamId = match.battingFirstTeamId ?: match.team1Id
@@ -443,7 +702,6 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
                     _currentMatch.value = updatedMatch
                 }
             } else {
-                // Innings 2 (chasing)
                 val target = match.targetRuns
                 val chasedSuccessfully = newRuns >= target
                 val innings2Finished = chasedSuccessfully || newBalls >= maxBalls || allOut
@@ -480,7 +738,6 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
                     repository.updateMatch(updatedMatch)
                     _currentMatch.value = updatedMatch
 
-                    // Update tournament standings if part of a tournament
                     if (match.tournamentId != null && winnerId != null) {
                         updateTournamentStandingsAfterMatch(match.tournamentId, winnerId, if (winnerId == match.team1Id) match.team2Id else match.team1Id)
                     }
@@ -569,7 +826,6 @@ class CricketViewModel(private val repository: CricketRepository) : ViewModel() 
                 isCustom = true
             )
             val teamId = repository.insertTeam(team)
-            // Add initial 11 default players
             val players = (1..11).map { num ->
                 PlayerEntity(
                     teamId = teamId,
