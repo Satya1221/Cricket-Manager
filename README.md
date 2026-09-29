@@ -42,3 +42,7 @@ A modern, comprehensive cricket team, franchise, tournament, and live match scor
 ## Build validation
 
 Every push to `main` and every pull request now runs the Android debug build in GitHub Actions using JDK 21, Android SDK 36, and Gradle 9.3.1.
+
+## Local secrets
+
+Create a local `.env` file with your real `GEMINI_API_KEY` when AI features are enabled. `.env` is ignored by Git and `.env.example` contains only a safe placeholder.
