@@ -332,17 +332,28 @@ class CricketViewModel(val repository: CricketRepository) : ViewModel() {
     // TRAINING SYSTEM
     // ==========================================
     fun trainPlayer(player: PlayerEntity, discipline: String) {
-        viewModelScope.launch {
-            val updated = when (discipline) {
-                "Batting" -> player.copy(battingSkill = minOf(99, player.battingSkill + 1))
-                "Bowling" -> player.copy(bowlingSkill = minOf(99, player.bowlingSkill + 1))
-                "Fielding" -> player.copy(fieldingSkill = minOf(99, player.fieldingSkill + 1))
-                else -> player.copy(
-                    battingSkill = minOf(99, player.battingSkill + 1),
-                    fieldingSkill = minOf(99, player.fieldingSkill + 1)
-                )
+        viewModelScope.launch(Dispatchers.Default) {
+            val focus = when (discipline) {
+                "Batting" -> com.example.cricketmanager.engine.TrainingFocus.BATTING
+                "Bowling" -> com.example.cricketmanager.engine.TrainingFocus.BOWLING
+                "Fielding" -> com.example.cricketmanager.engine.TrainingFocus.FIELDING
+                "Fitness" -> com.example.cricketmanager.engine.TrainingFocus.FITNESS
+                else -> com.example.cricketmanager.engine.TrainingFocus.BALANCED
             }
-            repository.updatePlayer(updated)
+            val result = com.example.cricketmanager.engine.PlayerDevelopmentEngine.develop(
+                player = player,
+                trainingFocus = focus,
+                intensity = com.example.cricketmanager.engine.TrainingIntensity.STANDARD
+            )
+            repository.updatePlayer(
+                player.copy(
+                    battingSkill = result.battingSkillAfter,
+                    bowlingSkill = result.bowlingSkillAfter,
+                    fieldingSkill = result.fieldingSkillAfter,
+                    fitness = (player.fitness + if (focus == com.example.cricketmanager.engine.TrainingFocus.FITNESS) 2 else 0).coerceIn(1, 100),
+                    form = (player.form + 1).coerceIn(1, 100)
+                )
+            )
             selectTeam(player.teamId)
         }
     }
