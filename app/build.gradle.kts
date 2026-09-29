@@ -19,18 +19,11 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("debugConfig") {
-            storeFile = file("${rootDir}/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
-    }
-
+    // Use Android's standard debug signing configuration.
+    // This avoids requiring a custom debug.keystore to be present in the repository.
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("debugConfig")
+            // Android Gradle Plugin supplies the default debug keystore automatically.
         }
         release {
             isMinifyEnabled = false
@@ -40,10 +33,12 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
