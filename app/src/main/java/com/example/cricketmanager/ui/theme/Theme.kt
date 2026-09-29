@@ -7,29 +7,27 @@ import androidx.compose.ui.graphics.Color
 
 private val PremiumCricketColorScheme = darkColorScheme(
     primary = CricketGold,
-    onPrimary = Color(0xFF1B1400),
+    onPrimary = Color(0xFF071000),
     primaryContainer = CricketNavySurfaceElevated,
     onPrimaryContainer = CricketGoldLight,
     secondary = CricketStadiumBlue,
-    onSecondary = Color.White,
+    onSecondary = Color(0xFF001015),
     secondaryContainer = CricketNavyCard,
-    onSecondaryContainer = Color(0xFFBCE0FD),
+    onSecondaryContainer = CricketStadiumNeon,
     tertiary = CricketStadiumPurple,
     onTertiary = Color.White,
-    background = CricketNavyBackground,
+    background = CricketBackground,
     onBackground = TextPrimary,
     surface = CricketNavySurface,
     onSurface = TextPrimary,
     surfaceVariant = CricketNavyCard,
     onSurfaceVariant = TextSecondary,
-    outline = CricketGoldBorder,
-    outlineVariant = Color(0xFF28345E)
+    outline = CricketBorderStrong,
+    outlineVariant = CricketBorder
 )
 
 @Composable
-fun CricketManagerTheme(
-    content: @Composable () -> Unit
-) {
+fun CricketManagerTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = PremiumCricketColorScheme,
         typography = Typography,
