@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 
 class CricketManagerApp : Application() {
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
     val database by lazy { CricketDatabase.getDatabase(this) }
     val repository by lazy {
         CricketRepository(
@@ -19,7 +18,9 @@ class CricketManagerApp : Application() {
             playerDao = database.playerDao(),
             matchDao = database.matchDao(),
             ballEventDao = database.ballEventDao(),
-            tournamentDao = database.tournamentDao()
+            tournamentDao = database.tournamentDao(),
+            contractDao = database.contractDao(),
+            developmentDao = database.developmentDao()
         )
     }
 
