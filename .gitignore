@@ -1,0 +1,21 @@
+# Gradle
+.gradle/
+/build/
+**/build/
+
+# Local Android/IDE files
+.idea/
+*.iml
+local.properties
+
+# Android generated files
+.externalNativeBuild/
+.cxx/
+captures/
+
+# Local secrets and environment files
+.env
+
+# Signing keys
+*.jks
+*.keystore
