@@ -53,13 +53,26 @@ data class PlayerEntity(
     val oversBowledBalls: Int = 0,
     val runsConceded: Int = 0,
     val bestBowlingWickets: Int = 0,
-    val bestBowlingRuns: Int = 0
+    val bestBowlingRuns: Int = 0,
+    val age: Int = 24,
+    val potentialSkill: Int = 90,
+    val form: Int = 75,
+    val morale: Int = 80,
+    val fitness: Int = 90,
+    val confidence: Int = 75,
+    val injuryProneness: Int = 10
 ) {
     val battingAverage: Double
         get() = if (matchesPlayed > 0) runsScored.toDouble() / matchesPlayed else 0.0
 
     val strikeRate: Double
         get() = if (ballsFaced > 0) (runsScored.toDouble() / ballsFaced) * 100 else 0.0
+
+    val overallRating: Int
+        get() = ((battingSkill * 0.45) + (bowlingSkill * 0.40) + (fieldingSkill * 0.15)).toInt().coerceIn(1, 100)
+
+    val developmentGap: Int
+        get() = (potentialSkill - overallRating).coerceAtLeast(0)
 
     val bowlingEconomy: Double
         get() = if (oversBowledBalls > 0) (runsConceded.toDouble() / (oversBowledBalls / 6.0)) else 0.0
