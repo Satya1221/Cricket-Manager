@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="cricket_primary">#0E5A44</color>
+    <color name="cricket_on_primary">#FFFFFF</color>
+    <color name="cricket_primary_container">#A3F2D4</color>
+    <color name="cricket_on_primary_container">#002117</color>
+    <color name="cricket_secondary">#C59A27</color>
+    <color name="cricket_tertiary">#E25B28</color>
+    <color name="cricket_background">#F8FAF8</color>
+    <color name="cricket_surface">#FFFFFF</color>
+</resources>

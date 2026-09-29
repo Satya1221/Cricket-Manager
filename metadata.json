@@ -1,0 +1,6 @@
+{
+  "name": "Cricket Manager",
+  "description": "Comprehensive cricket team, player, match, and tournament manager with live ball-by-ball scoring, match simulation, and statistics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
