@@ -38,3 +38,7 @@ A modern, comprehensive cricket team, franchise, tournament, and live match scor
 - **UI Framework**: Jetpack Compose & Material Design 3
 - **Local Database**: Room 2.7.0 with Kotlin Symbol Processing (KSP)
 - **Architecture**: MVVM with Repository pattern and Kotlin Coroutines & Flow
+
+## Build validation
+
+Every push to `main` and every pull request now runs the Android debug build in GitHub Actions using JDK 21, Android SDK 36, and Gradle 9.3.1.
