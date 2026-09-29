@@ -6,6 +6,19 @@ import com.example.cricketmanager.data.model.PlayerEntity
 import com.example.cricketmanager.data.model.WicketType
 import kotlin.random.Random
 
+enum class PitchType { GREEN, DRY, FLAT, BALANCED }
+enum class WeatherCondition { CLEAR, OVERCAST, DEW, RAINY }
+
+data class OutcomeProbabilities(
+    val zero: Double,
+    val one: Double,
+    val two: Double,
+    val three: Double,
+    val four: Double,
+    val six: Double,
+    val wicket: Double
+)
+
 enum class BattingMindset(val displayName: String, val description: String) {
     DEFENSIVE("Defensive", "Protect wickets, take singles, low risk"),
     BALANCED("Balanced", "Rotate strike, punish bad balls"),
@@ -22,6 +35,71 @@ enum class BowlingPlan(val displayName: String, val description: String) {
 }
 
 object MatchSimulationEngine {
+
+    fun outcomeProbabilities(
+        striker: PlayerEntity,
+        bowler: PlayerEntity,
+        mindset: BattingMindset,
+        bowlingPlan: BowlingPlan,
+        pitch: PitchType = PitchType.BALANCED,
+        weather: WeatherCondition = WeatherCondition.CLEAR,
+        requiredRunRate: Double = 8.0,
+        ballsRemaining: Int = 120,
+        wicketsLost: Int = 0
+    ): OutcomeProbabilities {
+        val skillDiff = ((striker.battingSkill - bowler.bowlingSkill) / 100.0).coerceIn(-0.65, 0.65)
+        val pressure = when {
+            requiredRunRate >= 13.0 -> 1.20
+            requiredRunRate >= 10.0 -> 1.10
+            requiredRunRate <= 5.0 -> 0.92
+            else -> 1.0
+        }
+        val urgency = if (ballsRemaining <= 24 && requiredRunRate >= 10.0) 1.08 else 1.0
+        var wicket = when (mindset) {
+            BattingMindset.DEFENSIVE -> 0.030
+            BattingMindset.BALANCED -> 0.052
+            BattingMindset.AGGRESSIVE -> 0.080
+            BattingMindset.BLITZ -> 0.120
+        }
+        wicket *= (1.0 - skillDiff * 0.45)
+        wicket *= pressure
+        if (wicketsLost >= 7) wicket *= 1.15
+        if (bowlingPlan == BowlingPlan.ATTACK_STUMPS) wicket *= 1.10
+        if (bowlingPlan == BowlingPlan.SHORT_BOUNCERS) wicket *= 1.08
+        if (pitch == PitchType.GREEN) wicket *= 1.07
+        if (weather == WeatherCondition.OVERCAST) wicket *= 1.05
+        wicket = wicket.coerceIn(0.015, 0.22)
+
+        var six = (0.032 + skillDiff * 0.020) * pressure * urgency
+        var four = (0.125 + skillDiff * 0.030) * pressure
+        var three = 0.022
+        var two = 0.110
+        var one = 0.355
+
+        when (mindset) {
+            BattingMindset.DEFENSIVE -> { six *= 0.30; four *= 0.62; one *= 1.12 }
+            BattingMindset.AGGRESSIVE -> { six *= 1.65; four *= 1.28; one *= 0.96 }
+            BattingMindset.BLITZ -> { six *= 2.20; four *= 1.55; one *= 0.82 }
+            BattingMindset.BALANCED -> Unit
+        }
+        if (pitch == PitchType.FLAT) { six *= 1.10; four *= 1.08 }
+        if (pitch == PitchType.DRY && bowler.bowlingStyle.name.contains("SPIN")) { six *= 0.90; four *= 0.92 }
+        if (weather == WeatherCondition.DEW) { six *= 1.06; four *= 1.04 }
+
+        val usable = (1.0 - wicket).coerceAtLeast(0.000001)
+        val raw = six + four + three + two + one
+        val scale = usable / raw
+
+        return OutcomeProbabilities(
+            zero = (usable - raw * scale).coerceAtLeast(0.0),
+            one = one * scale,
+            two = two * scale,
+            three = three * scale,
+            four = four * scale,
+            six = six * scale,
+            wicket = wicket
+        )
+    }
 
     fun simulateBall(
         matchId: Long,
