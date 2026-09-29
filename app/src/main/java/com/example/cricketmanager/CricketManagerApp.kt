@@ -20,7 +20,8 @@ class CricketManagerApp : Application() {
             ballEventDao = database.ballEventDao(),
             tournamentDao = database.tournamentDao(),
             contractDao = database.contractDao(),
-            developmentDao = database.developmentDao()
+            developmentDao = database.developmentDao(),
+            financialTransactionDao = database.financialTransactionDao()
         )
     }
 
