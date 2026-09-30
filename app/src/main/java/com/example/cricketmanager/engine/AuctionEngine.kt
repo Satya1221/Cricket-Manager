@@ -32,7 +32,13 @@ object AuctionEngine {
                     purseLakhs = franchise.purseLakhs,
                     currentSquadSize = 0
                 )
-                val nextBid = currentBidLakhs + INCREMENT
+                val increment = when (valuation.tier) {
+                    AuctionTier.MARQUEE -> maxOf(INCREMENT, 50)
+                    AuctionTier.PREMIUM -> INCREMENT
+                    AuctionTier.CORE -> INCREMENT
+                    AuctionTier.VALUE, AuctionTier.DEVELOPMENT -> 10
+                }
+                val nextBid = currentBidLakhs + increment
                 if (valuation.maximumBidLakhs >= nextBid && franchise.purseLakhs >= nextBid) {
                     franchise to nextBid
                 } else null
